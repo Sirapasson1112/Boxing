@@ -143,7 +143,21 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
   .stages{grid-template-columns:repeat(3,minmax(0,1fr))}
   .moves,.keys,.stats{grid-template-columns:auto 1fr}
 }
-@media (max-width:420px){.roster{grid-template-columns:repeat(3,minmax(0,1fr))}.pl .at{grid-template-columns:repeat(3,56px)}.pl .mv{grid-template-columns:repeat(4,42px)}}
+@media (max-width:420px){.roster{grid-template-columns:repeat(3,minmax(0,1fr))}.pl .at{grid-template-columns:repeat(3,52px)}.pl .mv{grid-template-columns:repeat(4,40px)}.pad{gap:8px}}
+[hidden]{display:none!important}
+.pad button{-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+@media (pointer:coarse) and (min-width:700px) and (min-height:600px){
+  .pl .mv{grid-template-columns:repeat(4,64px)}.pl .at{grid-template-columns:repeat(3,86px)}
+  .pad button{height:62px;font-size:15px;border-radius:14px}.pad{padding-block:12px calc(14px + env(safe-area-inset-bottom,0px))}}
+@media (orientation:landscape) and (max-height:540px){
+  .hud{padding-block:5px 4px;gap:8px}.side{gap:3px}.bar{height:12px}#timer{font-size:22px}.clock{gap:2px}.rd{display:none}
+  .touch .pad{position:fixed;left:0;right:0;bottom:0;z-index:3;background:none;border:0;pointer-events:none}
+  .touch .pad button{pointer-events:auto;opacity:.82;height:44px}
+  .touch .pad.two .pl{border-top:0;max-width:330px}
+  #vs{display:none}
+  #menu{background:rgba(14,10,16,.95)}.panel{width:100%;padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .roster{grid-template-columns:repeat(6,minmax(0,1fr))}.stages{grid-template-columns:repeat(5,minmax(0,1fr))}
+  .startbar{padding-block:6px calc(8px + env(safe-area-inset-bottom,0px))}.go{padding:9px 20px;font-size:19px}}
 @media (prefers-reduced-motion:reduce){#banner.pop{animation:none}}
 </style>
 </head>
@@ -916,7 +930,7 @@ function buildStage(i){if(STG[i])return STG[i];const S=STAGES[i],lit=[],crowd=[]
 function refreshStageText(){for(const k in STG){const s=STG[k];R3.tex(floorCanvas(s.S),s.floorMat.tex);R3.tex(bgCanvas(s.S),s.bgMat.tex)}}
 
 /* ---------------- camera & render ---------------- */
-const cam={x:0,y:1.8,z:7,tx:0,ty:1.1,fov:36*P/180};
+const cam={x:0,y:1.8,z:7,tx:0,ty:1.1,fov:36*P/180};const OVERLAY=matchMedia('(orientation:landscape) and (max-height:540px)');
 let cw=1,ch=1,dpr=1;const PROJM=M4.n(),VIEW=M4.n(),VP=M4.n(),TMP=M4.n(),SHM=M4.n();
 {const L=[.28,1,.35],h=.006;SHM[4]=-L[0]/L[1];SHM[5]=0;SHM[6]=-L[2]/L[1];SHM[12]=L[0]/L[1]*h;SHM[13]=h;SHM[14]=L[2]/L[1]*h}
 function resize(){const r=$('stage').getBoundingClientRect();dpr=Math.min(devicePixelRatio||1,touch?1.5:1.75);const w=Math.max(1,Math.round(r.width*dpr)),h=Math.max(1,Math.round(r.height*dpr));
@@ -925,7 +939,7 @@ function updCam(dt){let ex,ey,ez,tx,ty;
  if(game.mode==='menu'){const a=Math.sin(game.time*.25)*.5,wide=cw>820,off=wide?-2.3:0;tx=off;ty=1.15;ex=off+Math.sin(a)*5.6;ez=Math.cos(a)*5.6;ey=1.55}
  else if(game.cine){const f=game.cine.f,c=wpos(f.rig.mk.chest);tx=c[0];ty=c[1]+.05;ex=c[0]+f.face*1.5;ey=c[1]+.25;ez=2.3}
  else{const a=F[0].x,b=F[1].x,mid=(a+b)/2,sep=Math.abs(a-b),asp=cw/ch,need=(sep+2.6)/(2*Math.tan(cam.fov/2)*asp);
-  ez=clamp(Math.max(3.8+sep*1.15,need),4.8,14);tx=clamp(mid,-2.4,2.4);ty=1.05+Math.max(F[0].y,F[1].y)*.35+(asp<1?(1-asp)*.9:0);ex=tx;ey=1.72+(asp<1?(1-asp)*.6:0);
+  ez=clamp(Math.max(3.8+sep*1.15,need),4.8,14);tx=clamp(mid,-2.4,2.4);ty=1.05+Math.max(F[0].y,F[1].y)*.35+(asp<1?(1-asp)*.9:0)-(OVERLAY.matches&&touch?.4:0);ex=tx;ey=1.72+(asp<1?(1-asp)*.6:0);
   if(game.mode==='intro'){const u=smooth(game.phaseT/1.875);ex=lerp(tx+4.5,tx,u);ez=lerp(3,ez,u);ey=lerp(2.4,ey,u)}
   if(game.mode==='ko'&&game.phaseT<2.5){const k=F.find(f=>f.state==='ko'||f.hp<=0);if(k){tx=lerp(tx,k.x,.5);ez*=.8}}}
  const k=Math.min(1,dt*(game.cine?9:game.mode==='menu'?2:5));cam.x+=(ex-cam.x)*k;cam.y+=(ey-cam.y)*k;cam.z+=(ez-cam.z)*k;cam.tx+=(tx-cam.tx)*k;cam.ty+=(ty-cam.ty)*k}
@@ -1071,7 +1085,9 @@ function showSp(f,m){const e=$('spname');e.textContent=(m.ult?'ท่าไม�
 function flash(v){const e=$('flash');if(reduce)return;e.style.transition='none';e.style.opacity=v;requestAnimationFrame(()=>{e.style.transition='opacity .35s';e.style.opacity=0})}
 function startCine(f,m){game.cine={f,t:0,dur:.85};flash(.6);EDM.set(EDM.sec)}
 const NAMES=()=>sel.mode==='2p'?['ผู้เล่น 1','ผู้เล่น 2']:['คุณ','CPU'];
-function startMatch(){au();const opp=sel.mode==='2p'?sel.char2:sel.cpu;F=[mkF(0,sel.char),mkF(1,opp)];
+let wake=null;function keepAwake(){try{if(navigator.wakeLock&&!wake)navigator.wakeLock.request('screen').then(w=>{wake=w;w.addEventListener('release',()=>wake=null)}).catch(()=>{})}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&game.mode!=='menu')keepAwake()});
+function startMatch(){au();keepAwake();const opp=sel.mode==='2p'?sel.char2:sel.cpu;F=[mkF(0,sel.char),mkF(1,opp)];
  STAIN.clear();PT.length=0;PJ.length=0;game.wins=[0,0];game.round=1;F.forEach(f=>f.meter=0);
  F.forEach((f,i)=>{const p='p'+(i+1);$(p+'n').textContent=NAMES()[i]+' · '+f.ch.name;$(p+'tag').style.background=f.ch.look.bot});
  buildPad();document.body.classList.remove('inmenu');$('menu').hidden=true;$('end').hidden=true;$('vs').hidden=true;startRound()}
